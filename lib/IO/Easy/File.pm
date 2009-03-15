@@ -1,20 +1,31 @@
 package IO::Easy::File;
 
-use strict;
+use Class::Easy;
+
+use Encode qw(decode encode perlio_ok is_utf8);
+
+use Fcntl ':seek';
+
+use File::Spec;
+our $FS = 'File::Spec';
 
 use IO::Easy;
 use base qw(IO::Easy);
 
-use Encode qw(decode encode perlio_ok is_utf8);
-
-use File::Spec;
-
-our $FS = 'File::Spec';
-
 use IO::Dir;
 
-our $PART = 1024*1024;
+our $PART = 1 << 15;
 our $ENC  = '';
+
+our $IRS;
+
+if ( $^O =~ /win32/i || $^O =~ /vms/i ) {
+	$IRS = "\015\012" ;
+} elsif ( $^O =~ /mac/i ) {
+	$IRS = "\015" ;
+} else {
+	$IRS = "\012" ;
+}
 
 sub _init {
 	my $self = shift;
@@ -213,7 +224,7 @@ sub move {
 	
 	my $buff;
 	
-	while (read(IN, $buff, 8 * 2**10)) {
+	while (read(IN, $buff, 8 * 1 << 10)) {
 		print OUT $buff;
 	}
 	
@@ -226,4 +237,164 @@ sub move {
 	
 }
 
+sub string_reader {
+	my $self = shift;
+	my $sub  = shift;
+	my %params = @_;
+	
+	# because we can't seek in characters
+	open (FH, '<:raw', $self->{path}) or return; 
+
+	my $seek_pos = 0;
+	if ($params{reverse}) {
+		if (seek (FH, 0, SEEK_END)) {
+			$seek_pos = tell (FH);
+		} else {
+			return;
+		}
+	}
+	
+	my $buffer_size = $self->part;
+	
+	my $remains = '';
+	my $buffer;
+	my $read_cnt = 0;
+	
+	my $c = 10;
+	
+	if ($params{reverse}) {
+		do {
+			$seek_pos -= $buffer_size;
+			$seek_pos = 0
+				if $seek_pos < 0;
+
+			seek (FH, $seek_pos, SEEK_SET);
+			$read_cnt = read (FH, $buffer, $buffer_size);
+
+			my @lines = split $IRS, $buffer . 'aaa';
+			
+			if ($lines[$#lines] eq 'aaa') {
+				$lines[$#lines] = '';
+			} else {
+				$lines[$#lines] =~ s/aaa$//s;
+			}
+			
+			$lines[$#lines] = $lines[$#lines] . $remains;
+			$remains = shift @lines;
+			
+			for (my $i = $#lines; $i >= 0; $i--) {
+				&$sub ($lines[$i]);
+			}
+			
+		} while $seek_pos > 0;
+	} else {
+		do {
+			seek (FH, $seek_pos, SEEK_SET);
+			$read_cnt = read (FH, $buffer, $buffer_size);
+			
+			$seek_pos += $buffer_size;
+			
+			my @lines = split $IRS, $buffer . 'aaa';
+			
+			if ($lines[$#lines] eq 'aaa') {
+				$lines[$#lines] = '';
+			} else {
+				$lines[$#lines] =~ s/aaa$//s;
+			}
+			
+			$lines[0] = $remains . $lines[0];
+			$remains = pop @lines;
+			
+			foreach my $line (@lines) {
+				&$sub ($line);
+			}
+			
+		} while $read_cnt == $buffer_size;
+		
+	}
+	
+	&$sub ($remains);
+
+	#	@{$lines_ref} = ( $self->{'sep_is_regex'} ) ?
+	#		$text =~ /(.*?$self->{'rec_sep'}|.+)/gs :
+	#		$text =~ /(.*?\Q$self->{'rec_sep'}\E|.+)/gs ;
+
+}
+
 1;
+=head1 NAME
+
+IO::Easy::File - IO::Easy child class for operations with files.
+
+=head1 METHODS
+
+=head2 contents, path, extension, dir_path
+
+	my $io = IO::Easy->new ('.');
+	my $file = $io->append('example.txt')->as_file;
+	print $file->contents;		# prints file content
+	print $file->path;			# prints file path, in this example it's './example.txt'
+	print $file->extension;		# file extension, in this example it's 'txt'
+	print $file->dir_path;		# parent directory, './'
+
+=cut
+
+=head2 store, store_if_empty
+
+IO::Easy::File has 2 methods for saving file: store and store_if_empty
+
+	my $io = IO::Easy->new ('.');
+	my $file = $io->append('example.txt')->as_file;
+	my $content = "Some text goes here";
+
+	$file->store($content);   			# saves the variable $content to file
+
+	$file->store_if_empty($content);	# saves the variable $content to file, only 
+										# if there's no such a file existing.		
+
+
+=cut
+
+=head2 create
+
+creates new directory
+
+	my $io = IO::Easy->new ('.');
+	my $dir = $io->append('data')->as_dir; 	# appends 'data' to $io and returns 
+											#the new object; blesses into directory object.
+	$dir->create;							# creates directory './data/'
+
+or
+
+	$io->as_dir->create ('data');
+
+=cut
+
+=head1 AUTHOR
+
+Ivan Baktsheev, C<< <apla at the-singlers.us> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to my email address,
+or through the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=IO-Easy>. 
+I will be notified, and then you'll automatically be notified
+of progress on your bug as I make changes.
+
+=head1 SUPPORT
+
+
+
+=head1 ACKNOWLEDGEMENTS
+
+
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2007-2009 Ivan Baktsheev
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+
+=cut

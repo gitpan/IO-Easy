@@ -3,7 +3,7 @@ package IO::Easy;
 use Class::Easy;
 
 use vars qw($VERSION);
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 use File::Spec;
 

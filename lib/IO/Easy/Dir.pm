@@ -154,3 +154,132 @@ sub copy_node {
 
 
 1;
+
+=head1 NAME
+
+IO::Easy::Dir - IO::Easy child class for operations with directories.
+
+=head1 SYNOPSIS
+
+	use IO::Easy;
+
+	my $dir = IO::Easy->new ('.')->as_dir;
+
+	$dir->scan_tree (sub {
+		my $file = shift;
+
+		return 0 if $file->type eq 'dir' and $file->name eq 'CVS';
+	});
+
+	$dir->create (qw(t IO-Easy)); # creates ./t/IO-Easy
+
+	my $source = $dir->append('data')->as_dir;
+	my $destination = $dir->append('backup')->as_dir;
+	$source->copy_children($destination, $handler);
+
+
+=head1 METHODS
+
+=head2 scan_tree
+
+Scans directory tree.
+
+There's a standard module File::Find exists. But it's monstrous and is used 
+because of historical reasons. For the same functionality IO::Easy has a 
+method scan_tree and this method can replace File::Find in the most cases.
+
+	my $io = IO::Easy->new ('.');
+	my $dir = $io->as_dir;
+	$dir->scan_tree ($handler);
+
+$handler is a code ref which is called during scan for each found object
+and retrieves the found object as a parameter.
+
+Symlinks processing during directory scanning must be handled by user of this 
+module himself at the moment.
+
+As an example with help of $handler you can recursively scan directory and get 
+the number of files with defined extension, in this case function will look like 
+the following:
+
+	my $counter = 0;
+	my $handler = sub {
+		my $file = shift;
+		$counter++ if $file->extension eq 'pl';
+	}							 
+
+	$dir->scan_tree ($handler);
+
+	print "The number of files with 'pl' extension:", $counter;
+
+If $handler returns 0 for the directory, then scan_tree doesn't scan its contents, 
+this can be useful in e.g. ignoring CVS or any other unwanted directories.
+
+=cut
+
+=head2 copy_children
+
+recursive copying of directory contents
+
+	my $io = IO::Easy->new ('.');
+	my $source = $io->append('data')->as_dir;
+	my $destination = $io->append('backup')->as_dir;
+	$source->copy_children($destination, $handler);
+
+In this example $handler code ref, which is performed for every file during copying.
+With help of the $handler you can easily control the spice which files will be copied.
+
+	my $handler = sub {
+		my $file = shift;
+		return 1 if $file->extension eq 'txt';
+		return 0;
+	};
+
+In this case $handler function copies only files with 'txt' extension to the new 
+directory.
+
+=cut
+
+=head2 create
+
+creates new directory
+
+	my $io = IO::Easy->new ('.');
+	my $dir = $io->append('data')->as_dir; 	# appends 'data' to $io and returns 
+											#the new object; blesses into directory object.
+	$dir->create;							# creates directory './data/'
+
+or
+
+	$io->as_dir->create ('data');
+
+=cut
+
+=head1 AUTHOR
+
+Ivan Baktsheev, C<< <apla at the-singlers.us> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to my email address,
+or through the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=IO-Easy>. 
+I will be notified, and then you'll automatically be notified
+of progress on your bug as I make changes.
+
+=head1 SUPPORT
+
+
+
+=head1 ACKNOWLEDGEMENTS
+
+
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2007-2009 Ivan Baktsheev
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+
+=cut
