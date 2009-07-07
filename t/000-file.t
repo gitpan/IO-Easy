@@ -30,6 +30,14 @@ ok (ref $io eq qw(IO::Easy::File), "package changed: " . ref $io);
 
 ok ($io->layer eq ':raw', "layer is: " . $io->layer);
 
+# __data__ section reader
+
+&IO::Easy::File::__data__files;
+
+# TODO
+
+# string_reader
+
 $io->store ("123\n456\n789\n" x (1 << 20));
 
 my $counter = 0;
@@ -134,3 +142,24 @@ $string2 = $io->contents;
 
 ok unlink $path;
 
+__DATA__
+
+############################
+# IO::Easy::File aaa.pl
+############################
+
+print "Hello world!\n";
+
+############################
+# IO::Easy::File bbb.pl
+############################
+
+############################
+# IO::Easy::File ccc.pl
+############################
+
+print "Hello world 2!\n";
+
+############################
+# IO::Easy::File ddd.pl
+############################

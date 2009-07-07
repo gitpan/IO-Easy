@@ -145,7 +145,8 @@ sub contents {
 	
 	my $io_layer = $self->layer;
 	
-	open (FH, "<$io_layer", $self->{path})
+	my $fh;
+	open ($fh, "<$io_layer", $self->{path})
 		|| die "cannot open file $self->{path}: $!";
 	
 	my $contents;
@@ -153,11 +154,11 @@ sub contents {
 	my $part = $self->part;
 	my $buff;
 	
-	while (read (FH, $buff, $part)) {
+	while (read ($fh, $buff, $part)) {
 		$contents .= $buff;
 	}
 	
-	close (FH);
+	close ($fh);
 	
 	return $contents;
 }
@@ -176,13 +177,14 @@ sub store {
 	
 	my $io_layer = $self->layer;
 	
-	open (FH, ">$io_layer", $self->{path})
+	my $fh;
+	open ($fh, ">$io_layer", $self->{path})
 		|| die "cannot open file $self->{path}: $!";
 	
-	print FH $contents
+	print $fh $contents
 		if defined $contents;
 	
-	close FH;
+	close $fh;
 	
 	if (defined $change_layer and $change_layer ne '') {
 		$self->layer ($change_layer);
@@ -243,12 +245,13 @@ sub string_reader {
 	my %params = @_;
 	
 	# because we can't seek in characters
-	open (FH, '<:raw', $self->{path}) or return; 
+	my $fh;
+	open ($fh, '<:raw', $self->{path}) or return; 
 
 	my $seek_pos = 0;
 	if ($params{reverse}) {
-		if (seek (FH, 0, SEEK_END)) {
-			$seek_pos = tell (FH);
+		if (seek ($fh, 0, SEEK_END)) {
+			$seek_pos = tell ($fh);
 		} else {
 			return;
 		}
@@ -268,8 +271,8 @@ sub string_reader {
 			$seek_pos = 0
 				if $seek_pos < 0;
 
-			seek (FH, $seek_pos, SEEK_SET);
-			$read_cnt = read (FH, $buffer, $buffer_size);
+			seek ($fh, $seek_pos, SEEK_SET);
+			$read_cnt = read ($fh, $buffer, $buffer_size);
 
 			my @lines = split $IRS, $buffer . 'aaa';
 			
@@ -289,8 +292,8 @@ sub string_reader {
 		} while $seek_pos > 0;
 	} else {
 		do {
-			seek (FH, $seek_pos, SEEK_SET);
-			$read_cnt = read (FH, $buffer, $buffer_size);
+			# seek ($fh, $seek_pos, SEEK_SET);
+			$read_cnt = read ($fh, $buffer, $buffer_size);
 			
 			$seek_pos += $buffer_size;
 			
@@ -319,6 +322,41 @@ sub string_reader {
 	#		$text =~ /(.*?$self->{'rec_sep'}|.+)/gs :
 	#		$text =~ /(.*?\Q$self->{'rec_sep'}\E|.+)/gs ;
 
+}
+
+sub __data__files {
+	
+	my ($caller) = caller; 
+	
+	$caller ||= '';
+	
+	no strict 'refs';
+	
+	local $/;
+	my $buf;
+	eval "\$buf = <${caller}::DATA>";
+	
+	my @files = split /[\s\n\r\t]*#[#\s\n\r\t]+/, $buf;
+	
+	my $counter  = 0;
+	my $response = {};
+	
+	while ($counter < scalar @files) {
+		
+		if ($files[$counter] =~ /^IO::Easy(?:::File)?\s+(\S+)/) {
+			my $file_name = $1;
+			if (defined $files[$counter + 1] && $files[$counter + 1] =~ /^IO::Easy(?:::File)?\s+/) {
+				$response->{$file_name} = '';
+			} else {
+				$response->{$file_name} = $files[$counter + 1] || '';
+				$counter++;
+			}
+		}
+		
+		$counter++;
+	}
+	
+	return $response;
 }
 
 1;

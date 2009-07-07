@@ -1,3 +1,9 @@
+2009-07-07	Ivan Baktsheev <dot.and.thing@gmail.com>
+
+	Release 0.03
+
+	now io::easy::file can read file contents from caller <DATA>
+
 2009-03-15	Ivan Baktsheev <dot.and.thing@gmail.com>
 
 	Release 0.02

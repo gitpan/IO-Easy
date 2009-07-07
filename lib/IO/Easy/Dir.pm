@@ -8,6 +8,13 @@ use base qw(IO::Easy);
 use File::Spec;
 my $FS = 'File::Spec';
 
+use Cwd ();
+
+sub current {
+	my $pack = shift;
+	return $pack->new (Cwd::cwd());
+}
+
 sub create {
 	my $self = shift;
 	my @path = @_;
