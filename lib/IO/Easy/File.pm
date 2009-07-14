@@ -246,7 +246,7 @@ sub string_reader {
 	
 	# because we can't seek in characters
 	my $fh;
-	open ($fh, '<:raw', $self->{path}) or return; 
+	open ($fh, '<:raw', $self->{path}) or return;
 
 	my $seek_pos = 0;
 	if ($params{reverse}) {
@@ -336,30 +336,26 @@ sub __data__files {
 	my $buf;
 	eval "\$buf = <${caller}::DATA>";
 	
-	my @files = split /[\s\n\r\t]*#[#\s\n\r\t]+/, $buf;
+	my @files = split /\s*#+\s+#*\s*(?=IO::Easy)/s, $buf;
 	
-	my $counter  = 0;
 	my $response = {};
 	
-	while ($counter < scalar @files) {
+	foreach my $contents (@files) {
 		
-		if ($files[$counter] =~ /^IO::Easy(?:::File)?\s+(\S+)/) {
-			my $file_name = $1;
-			if (defined $files[$counter + 1] && $files[$counter + 1] =~ /^IO::Easy(?:::File)?\s+/) {
-				$response->{$file_name} = '';
-			} else {
-				$response->{$file_name} = $files[$counter + 1] || '';
-				$counter++;
-			}
-		}
+		my ($key, $value) = split (/\s+#+\s+/, $contents, 2);
 		
-		$counter++;
+		next unless defined $key;
+		
+		$key =~ s/IO::Easy(?:::File)?\s+//;
+		
+		$response->{$key} = $value;
 	}
 	
 	return $response;
 }
 
 1;
+
 =head1 NAME
 
 IO::Easy::File - IO::Easy child class for operations with files.
@@ -393,20 +389,53 @@ IO::Easy::File has 2 methods for saving file: store and store_if_empty
 
 =cut
 
-=head2 create
+=head2 string_reader
 
-creates new directory
+read strings from file in normal or reverse order
 
-	my $io = IO::Easy->new ('.');
-	my $dir = $io->append('data')->as_dir; 	# appends 'data' to $io and returns 
-											#the new object; blesses into directory object.
-	$dir->create;							# creates directory './data/'
+	$io->string_reader (sub {
+		my $s = shift;
 
-or
+		print $s;
+	});
 
-	$io->as_dir->create ('data');
+read from file end
+
+	$io->string_reader (sub {
+		my $s = shift;
+
+		print $s;
+	}, reverse => 1);
 
 =cut
+
+=head2 __data__files
+
+parse __DATA__ section and return hash of file contents encoded as:
+
+	__DATA__
+
+	########################
+	# IO::Easy file1
+	########################
+
+	FILE1 CONTENTS
+
+	########################
+	# IO::Easy file2
+	########################
+
+	FILE2 CONTENTS
+
+returns
+
+	{
+		file1 => 'FILE1 CONTENTS',
+		file2 => 'FILE2 CONTENTS',
+	}
+
+=cut
+
 
 =head1 AUTHOR
 
