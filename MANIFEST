@@ -9,3 +9,4 @@ README
 t/000-file.t
 t/001-dir.t
 t/002-stat.t
+t/003-data-files.t

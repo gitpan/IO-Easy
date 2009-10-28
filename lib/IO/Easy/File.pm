@@ -334,7 +334,8 @@ sub __data__files {
 	
 	local $/;
 	my $buf;
-	eval "\$buf = <${caller}::DATA>";
+	my $data_position;
+	eval "\$data_position = tell (${caller}::DATA); \$buf = <${caller}::DATA>; seek (${caller}::DATA, \$data_position, 0);";
 	
 	my @files = split /\s*#+\s+#*\s*(?=IO::Easy)/s, $buf;
 	
