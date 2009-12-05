@@ -93,7 +93,7 @@ sub scan_tree {
 	my @files;
 	
 	foreach my $file_name (readdir (DH)) {
-		next if $file_name eq $FS->curdir or $file_name eq $FS->up; # omit . ..
+		next if $file_name eq $FS->curdir or $file_name eq $FS->updir; # omit . ..
 		
 		my $file = $self->append ($file_name)->attach_interface;
 		
