@@ -1,3 +1,11 @@
+2009-12-05	Ivan Baktsheev <dot.and.thing@gmail.com>
+
+	Release 0.07
+
+	pod coverage test
+	"updir" renamed to "up", added alias "parent"
+	fix for append to "" directory bug
+
 2009-10-29	Ivan Baktsheev <dot.and.thing@gmail.com>
 
 	Release 0.06

@@ -3,7 +3,7 @@ package IO::Easy;
 use Class::Easy;
 
 use vars qw($VERSION);
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 use File::Spec;
 
@@ -46,17 +46,36 @@ sub attach_interface {
 	} elsif (-d $self->{path}) {
 		return $self->as_dir;
 	}
-	
-	
 }
 
 sub name {
 	my $self = shift;
 	
-	my $result = ($FS->splitpath ($self->{path}))[2];
+	my ($vol, $dir, $file) = $FS->splitpath ($self->{path});
 	
-	return $result;
+	return $file;
 }
+
+sub base_name {
+	my $self = shift;
+	
+	my $file_name = $self->name;
+	
+	my $base_name = ($file_name =~ /(.*?)(?:\.[^\.]+)?$/)[0];
+	
+	return $base_name;
+}
+
+sub extension {
+	my $self = shift;
+	
+	my $file_name = $self->name;
+	
+	my $extension = ($file_name =~ /(?:.*?)(?:\.([^\.]+))?$/)[0];
+	
+	return $extension;
+}
+
 
 sub as_file {
 	my $self = shift;
@@ -170,14 +189,13 @@ sub modified {
 	return $stat->[9];
 }
 
-sub size {
+sub parent {
 	my $self = shift;
 	
-	my $stat = $self->stat;
-	return $stat->[9];
+	return $self->up (@_);
 }
 
-sub updir {
+sub up {
 	my $self = shift;
 	
 	my @chunks = $FS->splitdir ($self->path);
@@ -186,8 +204,13 @@ sub updir {
 	my $updir = $FS->catdir (@chunks);
 	
 	try_to_use ('IO::Easy::Dir');
+	
+	$updir = IO::Easy::Dir->current
+		if $updir eq '';
+	
 	return IO::Easy::Dir->new ($updir);
 }
+
 
 1;
 
@@ -245,17 +268,92 @@ as_file or as_dir.
 
 =cut
 
-=head2 name
+=head2 path
 
-return current filesystem object name
+return current filesystem object path, also available as overload of ""
 
 =cut
+
+=head2 name
+
+return current filesystem object name, without path
+
+=cut
+
+=head2 base_name, extension
+
+name part before last dot and after last dot
+
+=cut
+
 
 =head2 as_file, as_dir, attach_interface
 
-TODO
+re bless object with specified or autodetected interface
+
+note: filesystem check for attach_interface
 
 =cut
+
+=head2 abs_path
+
+absolute path
+
+=cut
+
+=head2 append, append_in_place
+
+append filesystem objects to IO::Easy object
+
+	my $config = IO::Easy::Dir->current->append (qw(etc config.json));
+
+produce …/etc/config.json on unix
+
+=cut
+
+=head2 stat, modified, dev, inode, mode, nlink, uid, gid, rdev, size, atime, mtime, ctime, blksize, blocks
+
+complete stat array or this array accessors
+
+note: filesystem check
+
+=cut
+
+=head2 up, parent
+
+directory container for io object
+
+	my $config = IO::Easy::Dir->current->append (qw(etc config.json)); # '…/etc/config.json'
+	my $config_dir = $config->up; # '…/etc'
+
+=cut
+
+=head2 rel_path
+
+relative path to specified directory
+	
+	my $current = IO::Easy::Dir->current; # '…'
+	my $config = $current->append (qw(etc config.json)); # '…/etc/config.json'
+	my $config_rel = $config->rel_path ($current); # 'etc/config.json'
+
+=cut
+
+=head2 touch
+
+constructor for IO::Easy::Dir object
+	
+	my $current = IO::Easy::Dir->current; # '…'
+	my $config = $current->append (qw(etc config.json)); # '…/etc/config.json'
+	$config->touch; # file created
+
+=cut
+
+=head2 path_components
+
+path, split by filesystem separators
+
+=cut
+
 
 =head1 AUTHOR
 

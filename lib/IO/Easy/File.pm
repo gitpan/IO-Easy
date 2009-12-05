@@ -14,7 +14,7 @@ use base qw(IO::Easy);
 
 use IO::Dir;
 
-our $PART = 1 << 15;
+our $PART = 1 << 20;
 our $ENC  = '';
 
 our $IRS;
@@ -68,13 +68,6 @@ sub _init_layer {
 	return $self;
 }
 
-sub store_if_empty {
-	my $self = shift;
-	return if -e $self;
-	
-	$self->store (@_);
-}
-
 sub layer {
 	my $self = shift;
 	my $layer = shift;
@@ -98,44 +91,6 @@ sub part {
 		unless $part;
 	
 	$self->{part} = $part;
-}
-
-sub file_name {
-	my $self = shift;
-	
-	my ($vol, $dir, $file) = $FS->splitpath ($self->{path});
-	return $file;
-}
-
-sub base_name {
-	my $self = shift;
-	
-	my $file_name = $self->file_name;
-	
-	my $base_name = ($file_name =~ /(.*?)(?:\.[^\.]+)?$/)[0];
-	
-	return $base_name;
-}
-
-sub extension {
-	my $self = shift;
-	
-	my $file_name = $self->file_name;
-	
-	my $base_name = ($file_name =~ /(?:.*?)(?:\.([^\.]+))?$/)[0];
-	
-	return $base_name;
-}
-
-sub dir_path {
-	my $self = shift;
-	
-	my ($drive, $path) = $FS->splitpath ($self->{path});
-	my $result = $path;
-	$result = $FS->join ($drive, $path)
-		if $FS->file_name_is_absolute ($self->{path});
-	
-	return IO::Easy::Dir->new($result);
 }
 
 sub contents {
@@ -193,6 +148,13 @@ sub store {
 	return 1;
 }
 
+sub store_if_empty {
+	my $self = shift;
+	return if -e $self;
+	
+	$self->store (@_);
+}
+
 sub move {
 	my $self = shift;
 	my $to = shift;
@@ -226,7 +188,11 @@ sub move {
 	
 	my $buff;
 	
-	while (read(IN, $buff, 8 * 1 << 10)) {
+	my $part = $self->part;
+	
+	# TODO: async
+	
+	while (read(IN, $buff, $part)) {
 		print OUT $buff;
 	}
 	
@@ -369,8 +335,6 @@ IO::Easy::File - IO::Easy child class for operations with files.
 	my $file = $io->append('example.txt')->as_file;
 	print $file->contents;		# prints file content
 	print $file->path;			# prints file path, in this example it's './example.txt'
-	print $file->extension;		# file extension, in this example it's 'txt'
-	print $file->dir_path;		# parent directory, './'
 
 =cut
 
@@ -384,9 +348,8 @@ IO::Easy::File has 2 methods for saving file: store and store_if_empty
 
 	$file->store($content);   			# saves the variable $content to file
 
-	$file->store_if_empty($content);	# saves the variable $content to file, only 
+	$file->store_if_empty ($content);	# saves the variable $content to file, only 
 										# if there's no such a file existing.		
-
 
 =cut
 
@@ -437,6 +400,36 @@ returns
 
 =cut
 
+=head2 enc
+
+file encoding for reading and writing files. by default '', which is :raw for
+PerlIO. you can redefine it by providing supported encoding, as example utf-8 or ascii
+
+=cut
+
+=head2 layer
+
+PerlIO layer name for reading and writing files. you can redefine it by providing argument
+
+=cut
+
+=head2 part
+
+chunk size for file reading, storing and moving
+
+=cut
+
+=head2 move
+
+moving file to another path
+
+=cut
+
+=head2 type
+
+always 'file'
+
+=cut
 
 =head1 AUTHOR
 

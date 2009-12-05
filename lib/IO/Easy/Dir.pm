@@ -1,6 +1,6 @@
 package IO::Easy::Dir;
 
-use strict;
+use Class::Easy;
 
 use IO::Easy;
 use base qw(IO::Easy);
@@ -93,7 +93,7 @@ sub scan_tree {
 	my @files;
 	
 	foreach my $file_name (readdir (DH)) {
-		next if $file_name eq $FS->curdir or $file_name eq $FS->updir; # omit . ..
+		next if $file_name eq $FS->curdir or $file_name eq $FS->up; # omit . ..
 		
 		my $file = $self->append ($file_name)->attach_interface;
 		
@@ -146,7 +146,7 @@ sub copy_node {
 	$self->scan_tree (sub {
 		my $file = shift;
 		
-		my $path = $file->rel_path ($self->updir->{path});
+		my $path = $file->rel_path ($self->up);
 		
 		if ($file->type eq 'dir') {
 			$target->create ($path);
@@ -224,7 +224,7 @@ this can be useful in e.g. ignoring CVS or any other unwanted directories.
 
 =cut
 
-=head2 copy_children
+=head2 copy_children, copy_node
 
 recursive copying of directory contents
 
@@ -261,6 +261,34 @@ or
 	$io->as_dir->create ('data');
 
 =cut
+
+=head2 items
+
+directory contents in array. you can provide filter for file extension, plain or regexp
+
+	$dir->items ('txt'); # plain
+	$dir->items ('txt|doc', 1); # regexp
+
+=cut
+
+=head2 rm_tree
+
+recursive deletion directory contents
+
+=cut
+
+=head2 current
+
+current directory constructor, using Cwd
+
+=cut
+
+=head2 type
+
+always 'dir'
+
+=cut
+
 
 =head1 AUTHOR
 

@@ -38,7 +38,9 @@ ok ($io->layer eq ':raw', "layer is: " . $io->layer);
 
 # string_reader
 
-$io->store ("123\n456\n789\n" x (1 << 20));
+my $chunk_count = 1 << 10;
+
+$io->store ("123\n456\n789\n" x $chunk_count);
 
 my $counter = 0;
 
@@ -53,13 +55,13 @@ $io->string_reader (sub {
 	
 	$counter ++;
 	
-	return if $counter > 3 * (1 << 20);
+	return if $counter > 3 * $chunk_count;
 	
 	die "$s, $counter" if length $s != 3;
 	# diag "string is: '$s'";
 });
 
-ok $counter == 3 * (1 << 20) + 1, "string count is: $counter, waiting for: " . (3 * (1 << 20) + 1);
+ok $counter == 3 * $chunk_count + 1, "string count is: $counter, waiting for: " . (3 * $chunk_count + 1);
 
 $counter = 0;
 $string_test = [reverse @$string_test];
@@ -81,7 +83,7 @@ $io->string_reader (sub {
 }, reverse => 1);
 #});
 
-ok $counter == 3 * (1 << 20) + 1, "string count is: $counter, waiting for: " . (3 * (1 << 20) + 1);
+ok $counter == 3 * $chunk_count + 1, "string count is: $counter, waiting for: " . (3 * $chunk_count + 1);
 
 sub handler {my $a = shift; return;}
 
