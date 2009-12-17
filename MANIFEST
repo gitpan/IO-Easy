@@ -11,3 +11,4 @@ t/001-dir.t
 t/002-stat.t
 t/003-data-files.t
 t/004-pod-coverage.t
+t/005-script.t

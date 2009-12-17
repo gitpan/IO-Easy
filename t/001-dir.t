@@ -32,3 +32,4 @@ my @files = $io->items;
 
 ok $file->path eq $files[0]->path;
 
+

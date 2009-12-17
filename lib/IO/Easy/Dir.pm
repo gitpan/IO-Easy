@@ -15,6 +15,13 @@ sub current {
 	return $pack->new (Cwd::cwd());
 }
 
+sub home {
+	my $pack = shift;
+	return $pack->new (
+		$ENV{USERPROFILE} || $ENV{HOME} || (getpwuid($<)) [7]
+	);
+}
+
 sub create {
 	my $self = shift;
 	my @path = @_;
@@ -280,6 +287,12 @@ recursive deletion directory contents
 =head2 current
 
 current directory constructor, using Cwd
+
+=cut
+
+=head2 home
+
+user home directory
 
 =cut
 
