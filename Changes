@@ -1,3 +1,10 @@
+2009-12-24	Ivan Baktsheev <dot.and.thing@gmail.com>
+
+	Release 0.11
+
+	much easier interface by default
+	fix for absolute and relative paths
+
 2009-12-10	Ivan Baktsheev <dot.and.thing@gmail.com>
 
 	Release 0.09

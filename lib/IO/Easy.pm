@@ -3,7 +3,7 @@ package IO::Easy;
 use Class::Easy;
 
 use vars qw($VERSION);
-$VERSION = '0.09';
+$VERSION = '0.11';
 
 use File::Spec;
 
@@ -13,15 +13,25 @@ sub import {
 	my $pack = shift;
 	my @params = @_;
 	
-	if (scalar grep {$_ eq 'script'} @params) {
+	my $script_ok = (scalar grep {$_ eq 'no_script'} @params) ? 0 : 1;
+	
+	if ($script_ok) {
 		
 		my $callpkg = caller;
 		
 		require IO::Easy::File;
 		require IO::Easy::Dir;
 		
-		sub ::file {'IO::Easy::File'}
-		sub ::dir  {'IO::Easy::Dir'}
+		my $caller = caller;
+		
+		foreach my $type (qw(file dir)) {
+			make_accessor ($caller, $type, default => sub {
+				my $class = 'IO::Easy::' . ucfirst ($type);
+				return $class->new (@_)
+					if @_ > 0;
+				$class
+			});
+		}
 	}
 }
 
@@ -159,17 +169,23 @@ sub abs_path {
 	
 	my $pack = ref $self;
 	
-	return $pack->new ($FS->rel2abs ($self->{path}));
+	if ($FS->file_name_is_absolute ($self->{path})) {
+		return $self;
+	} else {
+		return $pack->new ($FS->rel2abs ($self->{path}))
+	}
 	
 }
 
 sub rel_path {
 	my $self = shift;
-	my $relative = shift;
+	my $relative_to = shift;
 	
 	my $path = $self->{path};
+	$path = $self->abs_path
+		if $FS->file_name_is_absolute ($relative_to);
 	
-	return $FS->abs2rel ($path, $relative);
+	return $FS->abs2rel ($path, $relative_to);
 }
 
 sub path_components {
@@ -256,8 +272,19 @@ some system specifics of paths representation.
 =head1 SYNOPSIS
 
 	use IO::Easy;
-
+	
+	# abstract filesystem i/o interface
 	my $io = IO::Easy->new ('.');
+	
+	# directory interface
+	my $dir = $io->as_dir;
+	
+	# or easy
+	$dir = dir->current;
+	$dir = dir->new ('.');
+	
+	# or even easier
+	$dir = dir ('.');
 
 	# file object "./example.txt" for unix
 	my $file = $io->append ('example.txt')->as_file;
