@@ -12,11 +12,17 @@ BEGIN {
 	use_ok qw(IO::Easy::Dir);
 };
 
-`rm -rf t/a`; # not non-unix compliant
-
 my $path = 't/a';
 
-my $io = IO::Easy->new ($path)->as_dir;
+my $t = IO::Easy->new ('t');
+
+my $io  = $t->append ('a')->as_dir;
+my $io2 = $t->dir_io ('a');
+
+ok $io eq $io2;
+
+$io->rm_tree
+	if -d $io;
 
 ok (! -e $io);
 
@@ -26,10 +32,14 @@ ok (-d $io);
 
 my $file = $io->append ('b')->as_file;
 
+my $file2 = $io->file_io ('b');
+
+ok $file eq $file2;
+
 $file->touch;
 
 my @files = $io->items;
 
 ok $file->path eq $files[0]->path;
 
-
+$io->rm_tree;

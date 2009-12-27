@@ -3,7 +3,7 @@ package IO::Easy;
 use Class::Easy;
 
 use vars qw($VERSION);
-$VERSION = '0.11';
+$VERSION = '0.12';
 
 use File::Spec;
 
@@ -22,10 +22,12 @@ sub import {
 		require IO::Easy::File;
 		require IO::Easy::Dir;
 		
-		my $caller = caller;
+		my $io_easy_subclass = eval {$callpkg->isa ('IO::Easy')};
+		
+		return if $io_easy_subclass;
 		
 		foreach my $type (qw(file dir)) {
-			make_accessor ($caller, $type, default => sub {
+			make_accessor ($callpkg, $type, default => sub {
 				my $class = 'IO::Easy::' . ucfirst ($type);
 				return $class->new (@_)
 					if @_ > 0;
@@ -118,12 +120,25 @@ sub as_dir {
 	bless $file_object, 'IO::Easy::Dir';
 }
 
-
 sub append {
 	my $self = shift;
 	
 	my $appended = File::Spec->join ($self->{path}, @_);
 	return IO::Easy->new ($appended);
+}
+
+sub file_io {
+	my $self = shift;
+	
+	my $appended = File::Spec->join ($self->{path}, @_);
+	return IO::Easy::File->new ($appended);
+}
+
+sub dir_io {
+	my $self = shift;
+	
+	my $appended = File::Spec->join ($self->{path}, @_);
+	return IO::Easy::Dir->new ($appended);
 }
 
 sub append_in_place {
@@ -288,6 +303,9 @@ some system specifics of paths representation.
 
 	# file object "./example.txt" for unix
 	my $file = $io->append ('example.txt')->as_file;
+	
+	# or
+	$file = $io->file_io ('example.txt');
 
 	my $content = "Some text goes here!";
 	
@@ -384,6 +402,16 @@ append filesystem objects to IO::Easy object
 	my $config = IO::Easy::Dir->current->append (qw(etc config.json));
 
 produce ./etc/config.json on unix
+
+=cut
+
+=head3 file_io, dir_io
+
+append filesystem objects to IO::Easy subclass object
+
+	my $config = IO::Easy::Dir->current->file_io (qw(etc config.json));
+
+produce ./etc/config.json on unix, blessed into IO::Easy::File
 
 =cut
 

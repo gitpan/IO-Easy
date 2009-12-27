@@ -6,7 +6,7 @@ WriteMakefile(
 	'dist' => { COMPRESS=>"gzip", SUFFIX=>"gz" },
 	AUTHOR => 'Ivan Baktsheev <dot.and.thing@gmail.com>',
 	PREREQ_PM => {
-		'Class::Easy' => 0,
+		'Class::Easy' => '0.08',
 		'Encode'      => 0,
 		'File::Spec'  => 0,
 	}

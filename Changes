@@ -1,3 +1,9 @@
+2009-12-27	Ivan Baktsheev <dot.and.thing@gmail.com>
+
+	Release 0.12
+
+	added file_io and dir_io methods
+
 2009-12-24	Ivan Baktsheev <dot.and.thing@gmail.com>
 
 	Release 0.11
