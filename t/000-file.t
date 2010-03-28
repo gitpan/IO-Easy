@@ -17,17 +17,16 @@ unlink $path;
 
 my $io = IO::Easy->new ($path);
 
-ok (! -e $io);
+ok (defined $io and ! -e $io);
 
-my $file = $io->as_file;
-
-$io->touch;
+ok $io->touch;
 
 ok (-e $io, "file name is: '$io'");
 ok (-e $io->abs_path, "abs file name is: '".$io->abs_path."'");
 
-ok (ref $io eq qw(IO::Easy::File), "package changed: " . ref $io);
+$io = $io->as_file;
 
+ok (ref $io eq qw(IO::Easy::File), "package changed: " . ref $io);
 ok ($io->layer eq ':raw', "layer is: " . $io->layer);
 
 # __data__ section reader

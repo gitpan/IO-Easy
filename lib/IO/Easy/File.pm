@@ -17,16 +17,6 @@ use IO::Dir;
 our $PART = 1 << 20;
 our $ENC  = '';
 
-our $IRS;
-
-if ( $^O =~ /win32/i || $^O =~ /vms/i ) {
-	$IRS = "\015\012" ;
-} elsif ( $^O =~ /mac/i ) {
-	$IRS = "\015" ;
-} else {
-	$IRS = "\012" ;
-}
-
 sub _init {
 	my $self = shift;
 	
@@ -240,7 +230,7 @@ sub string_reader {
 			seek ($fh, $seek_pos, SEEK_SET);
 			$read_cnt = read ($fh, $buffer, $buffer_size);
 
-			my @lines = split $IRS, $buffer . 'aaa';
+			my @lines = split /^/, $buffer . 'aaa';
 			
 			if ($lines[$#lines] eq 'aaa') {
 				$lines[$#lines] = '';
@@ -252,6 +242,7 @@ sub string_reader {
 			$remains = shift @lines;
 			
 			for (my $i = $#lines; $i >= 0; $i--) {
+				chomp $lines[$i];
 				&$sub ($lines[$i]);
 			}
 			
@@ -263,7 +254,7 @@ sub string_reader {
 			
 			$seek_pos += $buffer_size;
 			
-			my @lines = split $IRS, $buffer . 'aaa';
+			my @lines = split /^/, $buffer . 'aaa';
 			
 			if ($lines[$#lines] eq 'aaa') {
 				$lines[$#lines] = '';
@@ -275,6 +266,7 @@ sub string_reader {
 			$remains = pop @lines;
 			
 			foreach my $line (@lines) {
+				chomp $line;
 				&$sub ($line);
 			}
 			
@@ -282,6 +274,7 @@ sub string_reader {
 		
 	}
 	
+	chomp $remains;
 	&$sub ($remains);
 
 	#	@{$lines_ref} = ( $self->{'sep_is_regex'} ) ?
@@ -320,6 +313,33 @@ sub __data__files {
 	
 	return $response;
 }
+
+
+sub touch {
+	my $self = shift;
+	
+	if(-e $self->{path})
+	{
+		if(-f _)
+		{
+			my $t = time;
+			
+			die "can't utime $self->{path}: $!"
+				unless utime $t, $t, $self->{path};
+		}
+		else
+		{
+			warn "not a file: $self->{path}\n";
+		}
+	}
+	else
+	{
+		$self->store;
+	}
+
+	return 1;
+}
+
 
 1;
 
@@ -428,6 +448,10 @@ moving file to another path
 =head2 type
 
 always 'file'
+
+=head2 touch
+
+similar to unix touch command - updates file timestamp
 
 =cut
 

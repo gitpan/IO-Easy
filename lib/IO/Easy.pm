@@ -3,7 +3,7 @@ package IO::Easy;
 use Class::Easy;
 
 use vars qw($VERSION);
-$VERSION = '0.12';
+$VERSION = '0.13';
 
 use File::Spec;
 
@@ -168,15 +168,11 @@ sub _compare { # for overload only
 
 sub touch {
 	my $self = shift;
-	
-	my $subclass = __PACKAGE__ . '::File';
-	# require $subclass;
-	
-	bless $self, $subclass;
-	
-	$self->_init;
-	
-	$self->store;
+
+	if (! -e $self) {
+		return $self->as_file->touch;
+	}
+	return $self->attach_interface->touch;
 }
 
 sub abs_path {

@@ -166,6 +166,32 @@ sub copy_node {
 	});
 }
 
+sub touch {
+	my $self = shift;
+	
+	if(-e $self->{path})
+	{
+		if(-d _)
+		{
+			my $t = time;
+			
+			die "can't utime $self->{path}: $!"
+				unless utime $t, $t, $self->{path};
+		}
+		else
+		{
+			warn "not a dir: $self->{path}\n";
+		}
+	}
+	else
+	{
+		die "can't create $self->{path}: $!"
+			unless mkdir $self->{path};
+	}
+
+	return 1;
+}
+
 
 1;
 
@@ -299,6 +325,10 @@ user home directory
 =head2 type
 
 always 'dir'
+
+=head2 touch
+
+similar to unix touch command - updates file timestamp
 
 =cut
 

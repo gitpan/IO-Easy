@@ -12,11 +12,12 @@ BEGIN {
 	use_ok qw(IO::Easy::Dir);
 };
 
-`rm -rf t/a`;
+my $io = dir->current->dir_io (qw(t a));
 
-my $path = 't/a';
-
-my $io = IO::Easy->new ($path)->as_dir;
+if (-d $io) {
+	$io->rm_tree;
+}
+#`rm -rf t/a`;
 
 ok (! -e $io);
 
@@ -28,7 +29,7 @@ my $file = $io->append ('b')->as_file;
 
 $file->touch;
 
-foreach (qw(inode atime mtime)) {
+foreach (qw(atime mtime)) { # inode not available in windows
 	ok $file->$_, "file $_ is: " . $file->$_;
 }
 
