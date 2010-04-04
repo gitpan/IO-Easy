@@ -13,45 +13,23 @@ BEGIN {
 };
 
 #-----------------------------------------------
-sub create_file
-{
-	die "usage" unless @_;
+
+sub touch_test {
+	my $file = shift;
 	
-	die "can't open $_[0]: $!\n"
-		unless open(TF, '>', $_[0]);
+	my ($at1, $mt1, $ct1) = ($file->stat (qw(atime mtime ctime)));
+
+	sleep 2;
+
+	$file->touch;
+
+	my ($at2, $mt2, $ct2) = ($file->stat (qw(atime mtime ctime)));
 	
-	print TF @_[1..$#_];
-	close TF;
-}
-
-sub unlink_file
-{
-	die "can't delete $_[0]: $!\n"
-		if @_ and -e $_[0] and not unlink $_[0];
-}
-
-sub create_dir
-{
-	die "can't create $_[0]: $!\n"
-		if @_ and not -d $_[0] and not mkdir $_[0];
-}
-
-sub unlink_dir
-{
-	die "can't delete $_[0]: $!\n"
-		if @_ and -e $_[0] and not rmdir $_[0];
-}
-
-sub get_file_times
-{
-	die "usage" unless @_;
-
-	my @s = stat $_[0];
-
-	die "can't stat $_[0]:$!\n"
-		unless @s;
-
-	return @s[9, 10];
+	ok ($at1 < $at2, "$at1 < $at2");
+	ok ($mt1 < $mt2, "$mt1 < $mt2");
+	ok ($at2 == $mt2, "$at2 == $mt2");
+	# ok ($ct1 == $ct2, "$ct1 == $ct2"); # fails at least in mac os x
+	
 }
 
 #-----------------------------------------------
@@ -59,121 +37,58 @@ sub get_file_times
 # File
 {
 	my $test_file_name = 'test_file_name';
+	my $file = file ($test_file_name);
 
-	{
-		create_file $test_file_name;
+	$file->store;
+	touch_test ($file);
 
-		my ($mtime1, $ctime1) = get_file_times $test_file_name;
+	unlink $file;
+	$file->touch;
 
-		sleep 2;
+	ok -f $file;
 
-		file->new($test_file_name)->touch;
+	my $data = "data";
+	$file->store ($data);
+	$file->touch;
 
-		my ($mtime2, $ctime2) = get_file_times $test_file_name;
+	ok ($file->contents eq $data); # :)
 
-		ok(($mtime1 < $mtime2 and $ctime1 < $ctime2));
-
-		ok($mtime2 == $ctime2);
-	}
-
-	{
-		unlink_file $test_file_name;
-	
-		file->new($test_file_name)->touch;
-
-		my ($mtime2, $ctime2) = get_file_times $test_file_name;
-
-		ok($mtime2 and $ctime2);
-	}
-
-	{
-		my $data = "data";
-
-		create_file $test_file_name, $data;
-
-		my $f = file->new($test_file_name);
-
-		$f->touch;
-
-		ok($f->contents eq $data); # :)
-	}
-
-	unlink_file $test_file_name;
+	unlink $file;
 }
 
 
 # Dir
 {
 	my $test_dir_name = 'test_dir_name';
+	my $dir = dir ($test_dir_name);
 
-	{
-		create_dir $test_dir_name;
+	$dir->create;
 
-		my ($mtime1, $ctime1) = get_file_times $test_dir_name;
-	
-		sleep 2;
+	touch_test ($dir);
 
-		dir->new($test_dir_name)->touch;
-		
-		my ($mtime2, $ctime2) = get_file_times $test_dir_name;
+	$dir->rm_tree;
+	$dir->touch;
 
-		ok(($mtime1 < $mtime2 and $ctime1 < $ctime2));
+	ok -d $dir;
 
-		ok($mtime2 == $ctime2);
-	}
-
-	{
-		unlink_dir $test_dir_name;
-
-		dir->new($test_dir_name)->touch;
-		
-		my ($mtime2, $ctime2) = get_file_times $test_dir_name;
-
-		ok($mtime2 and $ctime2);
-	}
-
-	unlink_dir $test_dir_name;
+	$dir->rm_tree;
 }
 
 # Generic
+# apla: very bad example
 {
-	{
-		my $test_file_name = 'test_file_name';
+	my $test_file_name = 'test_file_name';
+	my $io = IO::Easy->new ($test_file_name);
+	
+	$io->as_file->store;
 
-		create_file $test_file_name;
+	touch_test ($io);
 
-		my ($mtime1, $ctime1) = get_file_times $test_file_name;
+	unlink $io;
+	
+	$io->as_dir->create;
 
-		sleep 2;
-		
-		IO::Easy->new($test_file_name)->touch;
+	touch_test ($io);
 
-		my ($mtime2, $ctime2) = get_file_times $test_file_name;
-
-		ok(($mtime1 < $mtime2 and $ctime1 < $ctime2));
-
-		ok($mtime2 == $ctime2);
-
-		unlink_file $test_file_name;
-	}
-
-	{
-		my $test_dir_name = 'test_dir_name';
-
-		create_dir $test_dir_name;
-
-		my ($mtime1, $ctime1) = get_file_times $test_dir_name;
-
-		sleep 2;
-		
-		IO::Easy->new($test_dir_name)->touch;
-
-		my ($mtime2, $ctime2) = get_file_times $test_dir_name;
-
-		ok(($mtime1 < $mtime2 and $ctime1 < $ctime2));
-
-		ok($mtime2 == $ctime2);
-
-		unlink_dir $test_dir_name;
-	}
+	$io->as_dir->rm_tree;
 }

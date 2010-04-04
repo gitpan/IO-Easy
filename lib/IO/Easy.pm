@@ -3,11 +3,12 @@ package IO::Easy;
 use Class::Easy;
 
 use vars qw($VERSION);
-$VERSION = '0.13';
+$VERSION = '0.14';
 
 use File::Spec;
 
 my $stat_methods = [qw(dev inode mode nlink uid gid rdev size atime mtime ctime blksize blocks)];
+my $stat_methods_hash = {};
 
 sub import {
 	my $pack = shift;
@@ -44,6 +45,7 @@ foreach my $i (0 .. $#$stat_methods) {
 
 		return $stat->[$i];
 	});
+	$stat_methods_hash->{$stat_methods->[$i]} = $i;
 }
 
 use overload
@@ -215,15 +217,28 @@ sub path_components {
 
 sub stat {
 	my $self  = shift;
-	my $renew = 0;
 	
-	if ($renew || ! exists $self->{stat}) {
-		$self->{stat} = [stat $self->{path}];
+	my $stat = [stat $self->{path}];
+	
+	return $stat
+		unless @_;
+	
+	my $result = [];
+	
+	foreach my $stat_opt (@_) {
+		if ($stat_opt =~ /^(\d+)$/) {
+			push @$result, $stat->[$1];
+		} elsif (exists $stat_methods_hash->{$stat_opt}) {
+			push @$result, $stat->[$stat_methods_hash->{$stat_opt}];
+		} else {
+			die "unknown stat field: $stat_opt";
+		}
 	}
 	
-	return $self->{stat};
+	return @$result;
 }
 
+# TODO: rename to last_modified, add sub modified_since?
 sub modified {
 	my $self = shift;
 	

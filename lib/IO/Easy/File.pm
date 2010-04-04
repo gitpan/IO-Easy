@@ -110,30 +110,15 @@ sub contents {
 
 sub store {
 	my $self = shift;
-	my $contents = shift;
-	
-	my $enc = $self->enc;
-	
-	my $change_layer;
-	
-	if (defined $enc and $enc ne '' and ! is_utf8 ($contents)) {
-		$change_layer = $self->layer (':raw');
-	}
-	
-	my $io_layer = $self->layer;
 	
 	my $fh;
-	open ($fh, ">$io_layer", $self->{path})
+	open ($fh, ">:raw", $self->{path})
 		|| die "cannot open file $self->{path}: $!";
 	
-	print $fh $contents
-		if defined $contents;
+	# todo: check for status
+	print $fh @_;
 	
 	close $fh;
-	
-	if (defined $change_layer and $change_layer ne '') {
-		$self->layer ($change_layer);
-	}
 	
 	return 1;
 }

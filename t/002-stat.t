@@ -17,7 +17,6 @@ my $io = dir->current->dir_io (qw(t a));
 if (-d $io) {
 	$io->rm_tree;
 }
-#`rm -rf t/a`;
 
 ok (! -e $io);
 
@@ -37,4 +36,4 @@ foreach (qw(size)) {
 	ok ! $file->$_;
 }
 
-`rm -rf t/a`;
+$io->rm_tree;
