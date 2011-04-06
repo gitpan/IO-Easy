@@ -3,7 +3,7 @@ package IO::Easy;
 use Class::Easy;
 
 use vars qw($VERSION);
-$VERSION = '0.14';
+$VERSION = '0.15';
 
 use File::Spec;
 
@@ -14,11 +14,12 @@ sub import {
 	my $pack = shift;
 	my @params = @_;
 	
-	my $script_ok = (scalar grep {$_ eq 'no_script'} @params) ? 0 : 1;
+	my $import_ok = (scalar grep {$_ eq 'no_script'} @params) ? 0 : 1;
+	my $script_ok = (scalar grep {$_ eq 'project'} @params) ? 1 : 0;
 	
-	if ($script_ok) {
+	if ($script_ok || $import_ok) {
 		
-		my $callpkg = caller;
+		my $callpkg = $script_ok ? 'main' : caller;
 		
 		require IO::Easy::File;
 		require IO::Easy::Dir;

@@ -90,8 +90,14 @@ sub rm_tree {
 }
 
 sub scan_tree {
-	my $self = shift;
+	my $self    = shift;
 	my $handler = shift;
+	
+	my $flag = '';
+	
+	if (@_) {
+		($handler, $flag) = (shift, $handler);
+	}
 	
 	my $path = $self->{path};
 	
@@ -104,8 +110,12 @@ sub scan_tree {
 		
 		my $file = $self->append ($file_name)->attach_interface;
 		
+		my $return = 1;
+		$return = &$handler ($file)
+			if ($flag eq 'for_files_only' && -f $file) || $flag ne 'for_files_only';
+		
 		push @files, $file
-			if &$handler ($file) and $file->type eq 'dir';
+			if $return || $flag eq 'ignoring_return';
 		
 	}
 	closedir (DH);
@@ -250,10 +260,31 @@ the following:
 
 	$dir->scan_tree ($handler);
 
+	print "The number of files/directories with 'pl' extension:", $counter;
+
+BEWARE: If $handler returns 0 for the directory, then scan_tree doesn't scan its contents,
+this can be useful in e.g. ignoring CVS or any other unwanted directories.
+
+This method can be called with any of two optional flags:
+'for_files_only' and 'ignoring_return'
+
+For example:
+
+	my $counter = 0;
+	my $handler = sub {
+		my $file = shift;
+		$counter++ if $file->extension eq 'pl';
+	}
+
+	$dir->scan_tree (for_files_only => $handler);
+
 	print "The number of files with 'pl' extension:", $counter;
 
-If $handler returns 0 for the directory, then scan_tree doesn't scan its contents, 
-this can be useful in e.g. ignoring CVS or any other unwanted directories.
+Flag 'for_files_only' tell method to call handler only with objects
+with file (-f) check
+
+Flag 'ignoring_return' tell method to ignore return value from handler
+and process any found directory
 
 =cut
 

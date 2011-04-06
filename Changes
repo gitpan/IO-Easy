@@ -1,3 +1,11 @@
+2011-04-05	Ivan Baktsheev <dot.and.thing@gmail.com>
+
+	Release 0.15
+
+	project import fix
+	added flags for scan_tree
+	__data__files now can receive DATA ref
+
 2010-04-05	Ivan Baktsheev <dot.and.thing@gmail.com>
 
 	Release 0.14

@@ -270,16 +270,20 @@ sub string_reader {
 
 sub __data__files {
 	
-	my ($caller) = caller; 
-	
+	my ($caller) = caller;
 	$caller ||= '';
 	
 	no strict 'refs';
 	
+	my $fh = *{"${caller}::DATA"}{IO};
+	if (@_ and defined *{$_[0]}{IO}) {
+		$fh = *{$_[0]}{IO};
+	}
+	
 	local $/;
 	my $buf;
 	my $data_position;
-	eval "\$data_position = tell (${caller}::DATA); \$buf = <${caller}::DATA>; seek (${caller}::DATA, \$data_position, 0);";
+	eval "\$data_position = tell (\$fh); \$buf = <\$fh>; seek (\$fh, \$data_position, 0);";
 	
 	my @files = split /\s*#+\s+#*\s*(?=IO::Easy)/s, $buf;
 	
@@ -468,3 +472,11 @@ under the same terms as Perl itself.
 
 
 =cut
+
+__DATA__
+
+########################
+# IO::Easy file1
+########################
+
+FILE1 CONTENTS

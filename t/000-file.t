@@ -29,12 +29,6 @@ $io = $io->as_file;
 ok (ref $io eq qw(IO::Easy::File), "package changed: " . ref $io);
 ok ($io->layer eq ':raw', "layer is: " . $io->layer);
 
-# __data__ section reader
-
-&IO::Easy::File::__data__files;
-
-# TODO
-
 # string_reader
 
 my $chunk_count = 1 << 10;

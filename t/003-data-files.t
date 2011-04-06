@@ -32,6 +32,19 @@ $files = IO::Easy::File->__data__files;
 
 ok scalar keys %$files == 3;
 
+$files = IO::Easy::File::__data__files (*IO::Easy::File::DATA);
+
+ok scalar keys %$files eq 1;
+
+ok exists $files->{file1};
+
+ok $files->{file1} =~ /FILE1 CONTENTS/;
+
+$files = IO::Easy::File::__data__files (*IO::Easy::File::DATA);
+
+ok exists $files->{file1};
+
+
 __DATA__
 
 ##################################
