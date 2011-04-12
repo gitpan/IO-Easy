@@ -50,7 +50,8 @@ $io->scan_tree (sub {
 	return 0 if $f->name eq 'x';
 });
 
-ok join (', ', sort @scanned) eq 'b, x, z', join (', ', sort @scanned);
+ok @scanned == 3;
+ok scalar (grep {/^(?:b|x|z)$/} @scanned) == 3;
 
 @scanned = ();
 
@@ -59,7 +60,8 @@ $io->scan_tree (sub {
 	push @scanned, $f->rel_path ($io);
 });
 
-ok join (', ', sort @scanned) eq 'b, x, x/y, z', join (', ', sort @scanned);
+ok @scanned == 4;
+ok scalar (grep {/^(?:b|x|x.y|z)$/} @scanned) == 4;
 
 @scanned = ();
 
@@ -68,7 +70,8 @@ $io->scan_tree (for_files_only => sub {
 	push @scanned, $f->rel_path ($io);
 });
 
-ok join (', ', sort @scanned) eq 'b, x/y', join (', ', sort @scanned);
+ok @scanned == 2;
+ok scalar (grep {/^(?:b|x.y)$/} @scanned) == 2;
 
 @scanned = ();
 
@@ -78,11 +81,11 @@ $io->scan_tree (ignoring_return => sub {
 	return 0 if $f->name eq 'x';
 });
 
-ok join (', ', sort @scanned) eq 'b, x, x/y, z', join (', ', sort @scanned);
-
+ok @scanned == 4;
+ok scalar (grep {/^(?:b|x|x.y|z)$/} @scanned) == 4;
 
 my @files = $io->items;
 
-ok $file->path eq $files[0]->path;
+ok scalar grep {$file->path eq $_->path} @files;
 
 $io->rm_tree;

@@ -3,7 +3,7 @@ package IO::Easy;
 use Class::Easy;
 
 use vars qw($VERSION);
-$VERSION = '0.15';
+$VERSION = '0.16';
 
 use File::Spec;
 
@@ -11,11 +11,17 @@ my $stat_methods = [qw(dev inode mode nlink uid gid rdev size atime mtime ctime 
 my $stat_methods_hash = {};
 
 sub import {
-	my $pack = shift;
-	my @params = @_;
+	my $pack    = shift;
+	my $callpkg = caller;
+	my @params  = @_;
 	
 	my $import_ok = (scalar grep {$_ eq 'no_script'} @params) ? 0 : 1;
 	my $script_ok = (scalar grep {$_ eq 'project'} @params) ? 1 : 0;
+
+	# probably check for try_to_use is enough
+	return
+		if defined *{"$callpkg\::file"}{CODE}
+			and Class::Easy::sub_fullname (*{"$callpkg\::file"}{CODE}) eq 'IO::Easy::__ANON__';
 	
 	if ($script_ok || $import_ok) {
 		

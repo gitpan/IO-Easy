@@ -15,7 +15,7 @@ WriteMakefile(
 		},
 	},
 	PREREQ_PM => {
-		'Class::Easy' => '0.11',
+		'Class::Easy' => '0.15',
 		'Encode'      => 0,
 		'File::Spec'  => 0,
 	}
